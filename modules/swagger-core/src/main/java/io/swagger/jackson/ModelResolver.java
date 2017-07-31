@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.introspect.Annotated;
 import com.fasterxml.jackson.databind.introspect.AnnotatedMember;
+import com.fasterxml.jackson.databind.introspect.AnnotationMap;
 import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
 import com.fasterxml.jackson.databind.jsontype.NamedType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
@@ -376,8 +377,11 @@ public class ModelResolver extends AbstractModelConverter implements ModelConver
 
             if (member != null && !ignore(member, xmlAccessorTypeAnnotation, propName, propertiesToIgnore)) {
                 List<Annotation> annotationList = new ArrayList<Annotation>();
-                for (Annotation a : member.annotations()) {
-                    annotationList.add(a);
+                AnnotationMap allAnnotations = member.getAllAnnotations();
+                if (allAnnotations != null) {
+                    for (Annotation a : allAnnotations.annotations()) {
+                        annotationList.add(a);
+                    }
                 }
 
                 annotations = annotationList.toArray(new Annotation[annotationList.size()]);
@@ -668,8 +672,10 @@ public class ModelResolver extends AbstractModelConverter implements ModelConver
                         if (PrimitiveType.fromType(propType) != null) {
                             return PrimitiveType.createProperty(propType);
                         } else {
-                            return context.resolveProperty(propType,
-                                    Iterables.toArray(propMember.annotations(), Annotation.class));
+                            AnnotationMap allAnnotations = propMember.getAllAnnotations();
+                            Annotation[] annotations = Iterables.toArray(allAnnotations != null ?
+                               allAnnotations.annotations() : Collections.<Annotation>emptyList(), Annotation.class);
+                            return context.resolveProperty(propType, annotations);
                         }
                     }
                 }
